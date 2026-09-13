@@ -18,10 +18,21 @@ jobs:
           cd SRC
           pod install || pod install --repo-update
 
-      - name: Build App
+      - name: Build Xcode Project
         run: |
           cd SRC
-          xcodebuild -workspace *.xcworkspace -scheme App -configuration Release -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
+          # Arbeitsbereich und Schema dynamisch finden
+          WORKSPACE=$(ls -d *.xcworkspace | head -n 1)
+          SCHEME=$(xcodebuild -workspace "$WORKSPACE" -list | grep -A 10 "Schemes:" | tail -n +2 | xed -e 's/^[ \t]*//' | head -n 1 | xargs)
+          
+          if [ -z "$SCHEME" ]; then
+            SCHEME="Navi für ninebot"
+          fi
+          
+          echo "Verwende Workspace: $WORKSPACE"
+          echo "Verwende Scheme: $SCHEME"
+
+          xcodebuild -workspace "$WORKSPACE" -scheme "$SCHEME" -configuration Release -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
 
       - name: Zip Payload to IPA
         run: |
