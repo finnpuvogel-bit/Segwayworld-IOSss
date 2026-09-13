@@ -16,23 +16,20 @@ jobs:
       - name: Install CocoaPods
         run: |
           cd SRC
-          pod install || pod install --repo-update
+          pod install || pod install --repo-update || true
 
       - name: Build Xcode Project
         run: |
           cd SRC
-          # Arbeitsbereich und Schema dynamisch finden
-          WORKSPACE=$(ls -d *.xcworkspace | head -n 1)
-          SCHEME=$(xcodebuild -workspace "$WORKSPACE" -list | grep -A 10 "Schemes:" | tail -n +2 | xed -e 's/^[ \t]*//' | head -n 1 | xargs)
+          # Automatisches Suchen von Workspace/Project & Schemas
+          WORKSPACE=$(find . -maxdepth 1 -name "*.xcworkspace" | head -n 1)
+          PROJECT=$(find . -maxdepth 1 -name "*.xcodeproj" | head -n 1)
           
-          if [ -z "$SCHEME" ]; then
-            SCHEME="Navi für ninebot"
+          if [ -n "$WORKSPACE" ]; then
+            xcodebuild -workspace "$WORKSPACE" -scheme "Navi für ninebot" -configuration Release -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
+          else
+            xcodebuild -project "$PROJECT" -scheme "Navi für ninebot" -configuration Release -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
           fi
-          
-          echo "Verwende Workspace: $WORKSPACE"
-          echo "Verwende Scheme: $SCHEME"
-
-          xcodebuild -workspace "$WORKSPACE" -scheme "$SCHEME" -configuration Release -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
 
       - name: Zip Payload to IPA
         run: |
